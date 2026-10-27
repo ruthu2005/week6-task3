@@ -1,0 +1,223 @@
+{
+  "info": {
+    "_postman_id": "c1f7b8e2-8924-4d8e-9d8a-337b5879a61e",
+    "name": "Week 6 Task 3 - Role-Based Authorization API",
+    "description": "Comprehensive Postman test collection for verifying Role-Based Access Control (RBAC), JWT authentication, HTTP 200 authorized access, and HTTP 403 forbidden responses.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "user_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "target_user_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "1.1 Public API Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "1.2 Register Standard User (role: user)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Regular\",\n  \"email\": \"john.regular@example.com\",\n  \"password\": \"UserSecret@123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "1.3 Login as Regular User (Saves user_token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"UserPassword@123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "1.4 Login as Administrator (Saves admin_token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"AdminPassword@123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "1.5 Get Current Profile (/api/auth/me)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{user_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "me"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Role-Based Authorization Tests",
+      "item": [
+        {
+          "name": "2.1 Admin Dashboard - No Token [Expect 401 Unauthorized]",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/dashboard",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "dashboard"]
+            }
+          }
+        },
+        {
+          "name": "2.2 Admin Dashboard - User Token [Expect 403 Forbidden]",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{user_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/dashboard",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "dashboard"]
+            }
+          }
+        },
+        {
+          "name": "2.3 Admin Dashboard - Admin Token [Expect 200 OK]",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/dashboard",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "dashboard"]
+            }
+          }
+        },
+        {
+          "name": "2.4 List Users - User Token [Expect 403 Forbidden]",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{user_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/users",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "users"]
+            }
+          }
+        },
+        {
+          "name": "2.5 List Users - Admin Token [Expect 200 OK]",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/users",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "users"]
+            }
+          }
+        },
+        {
+          "name": "2.6 Update Role - Admin Token [Expect 200 OK]",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"admin\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/users/{{target_user_id}}/role",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "users", "{{target_user_id}}", "role"]
+            }
+          }
+        },
+        {
+          "name": "2.7 Profile Check - Any Authenticated User [Expect 200 OK]",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{user_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/profile-check",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "profile-check"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

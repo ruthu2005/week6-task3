@@ -1,0 +1,36 @@
+{
+  "name": "role-based-authorization-backend",
+  "version": "1.0.0",
+  "description": "Role-Based Authorization Backend API with Express, JWT, and Mongoose for Week 6 Task 3",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "seed": "node scripts/seed.js",
+    "test": "node --test tests/authorization.test.js"
+  },
+  "keywords": [
+    "express",
+    "jwt",
+    "role-based-authorization",
+    "rbac",
+    "middleware",
+    "mongoose",
+    "bcryptjs",
+    "security"
+  ],
+  "author": "ruthu2005",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.9.5"
+  },
+  "devDependencies": {
+    "supertest": "^7.0.0"
+  }
+}

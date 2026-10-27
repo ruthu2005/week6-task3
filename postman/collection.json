@@ -1,0 +1,464 @@
+{
+  "info": {
+    "_postman_id": "c1f7b8e2-8924-4d8e-9d8a-337b5879a61e",
+    "name": "Week 6 Task 3 - Role-Based Authorization API",
+    "description": "Comprehensive Postman test collection for verifying Role-Based Access Control (RBAC), JWT authentication, HTTP 200 authorized access, and HTTP 403 forbidden responses.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "user_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "target_user_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "1.1 Public API Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            },
+            "description": "Verifies that the API server is online and running."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Server is healthy', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.eql('healthy');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.2 Register Standard User (role: user)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Regular\",\n  \"email\": \"john.regular@example.com\",\n  \"password\": \"UserSecret@123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Registers a new account. By default, the backend sets role='user'."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201 Created or 409 Conflict if already seeded', function () {",
+                  "    pm.expect([201, 409]).to.include(pm.response.code);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.3 Login as Regular User (Saves user_token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"UserPassword@123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Logs in as a standard user. Test script extracts and saves user_token."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Token received and role is user', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.token).to.be.a('string');",
+                  "    pm.expect(json.user.role).to.eql('user');",
+                  "    pm.collectionVariables.set('user_token', json.token);",
+                  "    pm.collectionVariables.set('target_user_id', json.user.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.4 Login as Administrator (Saves admin_token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"AdminPassword@123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Logs in as an admin. Test script extracts and saves admin_token."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Token received and role is admin', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.token).to.be.a('string');",
+                  "    pm.expect(json.user.role).to.eql('admin');",
+                  "    pm.collectionVariables.set('admin_token', json.token);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.5 Get Current Profile (/api/auth/me)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{user_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "me"]
+            },
+            "description": "Returns current logged in user details."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Role-Based Authorization Tests",
+      "item": [
+        {
+          "name": "2.1 Admin Dashboard - No Token [Expect 401 Unauthorized]",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/admin/dashboard",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "dashboard"]
+            },
+            "description": "Tests access without providing any Authorization Bearer token."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401 Unauthorized', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "pm.test('Error code is TOKEN_MISSING', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.code).to.eql('TOKEN_MISSING');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.2 Admin Dashboard - User Token [Expect 403 Forbidden]",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{user_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/dashboard",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "dashboard"]
+            },
+            "description": "Verifies that an authenticated user without admin role receives HTTP 403 Forbidden."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 403 Forbidden', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "pm.test('Error details indicate permission denial', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.code).to.eql('ACCESS_FORBIDDEN');",
+                  "    pm.expect(json.userRole).to.eql('user');",
+                  "    pm.expect(json.requiredRoles).to.include('admin');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.3 Admin Dashboard - Admin Token [Expect 200 OK]",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/dashboard",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "dashboard"]
+            },
+            "description": "Verifies that an administrator receives HTTP 200 OK and dashboard data."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Dashboard statistics returned', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.true;",
+                  "    pm.expect(json.stats).to.have.property('totalUsers');",
+                  "    pm.expect(json.stats.systemStatus).to.eql('operational');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.4 List Users - User Token [Expect 403 Forbidden]",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{user_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/users",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "users"]
+            },
+            "description": "Ensures standard users cannot view the user database."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 403 Forbidden', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.5 List Users - Admin Token [Expect 200 OK]",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/users",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "users"]
+            },
+            "description": "Administrator retrieves list of all users and their assigned roles."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Users list contains array of objects without password', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.users).to.be.an('array');",
+                  "    if (json.users.length > 0) {",
+                  "        pm.expect(json.users[0].password).to.be.undefined;",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.6 Update Role - Admin Token [Expect 200 OK]",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"admin\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/users/{{target_user_id}}/role",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "users", "{{target_user_id}}", "role"]
+            },
+            "description": "Administrator modifies role of another user."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK or 404', function () {",
+                  "    pm.expect([200, 404]).to.include(pm.response.code);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.7 Profile Check - Any Authenticated User [Expect 200 OK]",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{user_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/profile-check",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "profile-check"]
+            },
+            "description": "Demonstrates contrasting access: valid session token succeeds here without requiring admin role."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
